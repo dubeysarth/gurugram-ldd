@@ -116,8 +116,8 @@
   <main class="container">
     <!-- Accessible tabs -->
     <div class="tablist" role="tablist" aria-label="3D Terrain Views">
-      <button id="tab-downstream"  role="tab" aria-selected="false" aria-controls="panel-downstream"  data-target="panel-gurugram">Gurugram Terrain (90m)</button>
-      <button id="tab-full-city"  role="tab" aria-selected="false" aria-controls="panel-full-city"  data-target="panel-gurugram-burned">Gurugram Terrain after Burn-in (90m)</button>
+      <button id="tab-downstream"  role="tab" aria-selected="false" aria-controls="panel-downstream"  data-target="panel-gurugram">Downstream Tracing</button>
+      <!-- <button id="tab-full-city"  role="tab" aria-selected="false" aria-controls="panel-full-city"  data-target="panel-gurugram-burned">Full City</button> -->
     </div>
 
     <!-- Panels -->
@@ -126,10 +126,10 @@
       <iframe data-src="./Full_Downstream.html" title="Downstream Tracing"></iframe>
     </section>
 
-    <section id="panel-full-city" class="panel" role="tabpanel" aria-labelledby="tab-full-city" hidden>
+    <!-- <section id="panel-full-city" class="panel" role="tabpanel" aria-labelledby="tab-full-city" hidden> -->
       <!-- Lazy-load -->
-      <iframe data-src="./Fine-Resolution-WithinCity.html" title="Full City"></iframe>
-    </section>
+      <!-- <iframe data-src="./Fine-Resolution-WithinCity.html" title="Full City"></iframe> -->
+    <!-- </section> -->
   </main>
 
   <noscript>
@@ -187,7 +187,8 @@
       });
 
       // Hash routing: #downstream, #full-city
-      const map = { downstream: 'tab-downstream', 'full-city': 'tab-full-city' };
+      // const map = { downstream: 'tab-downstream', 'full-city': 'tab-full-city' };
+      const map = { downstream: 'tab-downstream' };
       const initial = location.hash.replace('#', '');
       if (map[initial]) {
         activate(map[initial]);
