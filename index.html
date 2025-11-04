@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Interactive Terrain Viewer</title>
+  <meta name="description" content="DTM/DSM/Burn-in 3D viewers with tabs." />
+  <style>
+    :root {
+      --bg: #0f172a;      /* slate-900 */
+      --panel: #0b1226;   /* slightly darker */
+      --text: #e5e7eb;    /* zinc-200 */
+      --muted: #a1a1aa;   /* zinc-400 */
+      --accent: #60a5fa;  /* blue-400 */
+      --tab: #1f2937;     /* gray-800 */
+      --tab-active: #111827; /* gray-900 */
+      --border: #334155;  /* slate-700 */
+      --radius: 14px;
+      --header-h: 64px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background: radial-gradient(1200px 700px at 20% -10%, #172554 0%, var(--bg) 35%) fixed;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: var(--header-h) 1fr;
+    }
+    header {
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(17,24,39,0.7), rgba(17,24,39,0.5));
+      backdrop-filter: blur(6px);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.3px;
+      font-weight: 600;
+    }
+    .container {
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+    }
+    /* Tabs */
+    .tablist {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tablist button[role="tab"] {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--tab);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 140ms ease;
+      outline: none;
+    }
+    .tablist button[role="tab"][aria-selected="true"] {
+      background: var(--tab-active);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(96,165,250,0.25) inset;
+      color: #fff;
+    }
+    .tablist button[role="tab"]:focus-visible {
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    /* Panels */
+    .panel {
+      background: linear-gradient(180deg, rgba(2,6,23,0.7), rgba(2,6,23,0.85));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: clip;
+      height: calc(100vh - var(--header-h) - 14px - 52px); /* header + container padding + tabs height approx */
+      position: relative;
+    }
+    .panel iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: var(--panel);
+    }
+    .panel[hidden] { display: none; }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      padding: 0 2px 4px 2px;
+    }
+    @media (max-width: 640px) {
+      header h1 { font-size: 16px; }
+      .panel { height: calc(100vh - var(--header-h) - 14px - 64px); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Interactive Terrain Viewer</h1>
+    <div class="hint">Tip: use the tabs to switch plots</div>
+  </header>
+
+  <main class="container">
+    <!-- Accessible tabs -->
+    <div class="tablist" role="tablist" aria-label="3D Terrain Views">
+      <button id="tab-downstream"  role="tab" aria-selected="false" aria-controls="panel-downstream"  data-target="panel-gurugram">Gurugram Terrain (90m)</button>
+      <button id="tab-full-city"  role="tab" aria-selected="false" aria-controls="panel-full-city"  data-target="panel-gurugram-burned">Gurugram Terrain after Burn-in (90m)</button>
+    </div>
+
+    <!-- Panels -->
+    <section id="panel-downstream" class="panel" role="tabpanel" aria-labelledby="tab-downstream" hidden>
+      <!-- Lazy-load -->
+      <iframe data-src="./Full_Downstream.html" title="Downstream Tracing"></iframe>
+    </section>
+
+    <section id="panel-full-city" class="panel" role="tabpanel" aria-labelledby="tab-full-city" hidden>
+      <!-- Lazy-load -->
+      <iframe data-src="./Fine-Resolution-WithinCity.html" title="Full City"></iframe>
+    </section>
+  </main>
+
+  <noscript>
+    <div style="padding:12px;color:#fff;background:#7f1d1d;">
+      This page uses a small amount of JavaScript for tab switching. Please enable JavaScript.
+    </div>
+  </noscript>
+
+  <script>
+    (function () {
+      const tabs   = Array.from(document.querySelectorAll('[role="tab"]'));
+      const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+
+      function activate(tabIdOrHash) {
+        const targetId = (tabIdOrHash.startsWith('#') ? tabIdOrHash.slice(1) : tabIdOrHash)
+          .replace(/^tab-/, 'panel-')        // support passing a tab id
+          .replace(/^panel-/, 'panel-');     // ensure panel prefix
+
+        const tab = document.querySelector(`[aria-controls="${targetId}"]`);
+        const panel = document.getElementById(targetId);
+        if (!tab || !panel) return;
+
+        // Update selected states
+        tabs.forEach(t => t.setAttribute('aria-selected', String(t === tab)));
+        panels.forEach(p => p.hidden = (p !== panel));
+
+        // Lazy-load iframe src if needed
+        const iframe = panel.querySelector('iframe');
+        if (iframe && !iframe.src) {
+          const src = iframe.getAttribute('data-src');
+          if (src) iframe.src = src;
+        }
+
+        // Update hash for deep-linking
+        const hash = tab.id.replace(/^tab-/, '');
+        history.replaceState(null, '', '#' + hash);
+      }
+
+      // Click handling
+      tabs.forEach(t => {
+        t.addEventListener('click', () => activate(t.id));
+        // Basic keyboard navigation (Left/Right)
+        t.addEventListener('keydown', (e) => {
+          const i = tabs.indexOf(t);
+          if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            const n = tabs[(i + 1) % tabs.length];
+            n.focus(); activate(n.id);
+          } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            const p = tabs[(i - 1 + tabs.length) % tabs.length];
+            p.focus(); activate(p.id);
+          }
+        });
+      });
+
+      // Hash routing: #downstream, #full-city
+      const map = { downstream: 'tab-downstream', 'full-city': 'tab-full-city' };
+      const initial = location.hash.replace('#', '');
+      if (map[initial]) {
+        activate(map[initial]);
+      } else {
+        activate('tab-downstream'); // Updated to match the correct default tab
+      }
+
+      // Resize panels to full viewport without scroll jumps (optional)
+      const resize = () => {
+        // nothing extra; CSS handles it, but you can adjust iframes here if needed
+      };
+      window.addEventListener('resize', resize, { passive: true });
+    })();
+  </script>
+</body>
+</html>
